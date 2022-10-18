@@ -1,10 +1,13 @@
 <?php
-class ControllerStartupSeoUrl extends Controller {
-	public function index() {
-		// Add rewrite to url class
+namespace Opencart\Catalog\Controller\Startup;
+class SeoUrl extends \Opencart\System\Engine\Controller {
+	public function index(): void {
+		// Add rewrite to URL class
 		if ($this->config->get('config_seo_url')) {
 			$this->url->addRewrite($this);
 		}
+
+		$this->load->model('design/seo_url');
 
 		// Decode URL
 		if (isset($this->request->get['_route_'])) {
@@ -16,112 +19,75 @@ class ControllerStartupSeoUrl extends Controller {
 			}
 
 			foreach ($parts as $part) {
-				$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "seo_url WHERE keyword = '" . $this->db->escape($part) . "' AND store_id = '" . (int)$this->config->get('config_store_id') . "'");
+				$seo_url_info = $this->model_design_seo_url->getSeoUrlByKeyword($part);
 
-				if ($query->num_rows) {
-					$url = explode('=', $query->row['query']);
-
-					if ($url[0] == 'product_id') {
-						$this->request->get['product_id'] = $url[1];
-					}
-
-					if ($url[0] == 'category_id') {
-						if (!isset($this->request->get['path'])) {
-							$this->request->get['path'] = $url[1];
-						} else {
-							$this->request->get['path'] .= '_' . $url[1];
-						}
-					}
-
-					if ($url[0] == 'manufacturer_id') {
-						$this->request->get['manufacturer_id'] = $url[1];
-					}
-
-					if ($url[0] == 'information_id') {
-						$this->request->get['information_id'] = $url[1];
-					}
-
-					if ($query->row['query'] && $url[0] != 'information_id' && $url[0] != 'manufacturer_id' && $url[0] != 'category_id' && $url[0] != 'product_id') {
-						$this->request->get['route'] = $query->row['query'];
-					}
-				} else {
-					$this->request->get['route'] = 'error/not_found';
-
-					break;
-				}
-			}
-
-			if (!isset($this->request->get['route'])) {
-				if (isset($this->request->get['product_id'])) {
-					$this->request->get['route'] = 'product/product';
-				} elseif (isset($this->request->get['path'])) {
-					$this->request->get['route'] = 'product/category';
-				} elseif (isset($this->request->get['manufacturer_id'])) {
-					$this->request->get['route'] = 'product/manufacturer/info';
-				} elseif (isset($this->request->get['information_id'])) {
-					$this->request->get['route'] = 'information/information';
+				if ($seo_url_info) {
+					$this->request->get[$seo_url_info['key']] = html_entity_decode($seo_url_info['value'], ENT_QUOTES, 'UTF-8');
 				}
 			}
 		}
 	}
 
-	public function rewrite($link) {
+	public function rewrite(string $link): string {
 		$url_info = parse_url(str_replace('&amp;', '&', $link));
 
+		// Build the url
 		$url = '';
 
-		$data = array();
+		if ($url_info['scheme']) {
+			$url .= $url_info['scheme'];
+		}
 
-		parse_str($url_info['query'], $data);
+		$url .= '://';
 
-		foreach ($data as $key => $value) {
-			if (isset($data['route'])) {
-				if (($data['route'] == 'product/product' && $key == 'product_id') || (($data['route'] == 'product/manufacturer/info' || $data['route'] == 'product/product') && $key == 'manufacturer_id') || ($data['route'] == 'information/information' && $key == 'information_id')) {
-					$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "seo_url WHERE `query` = '" . $this->db->escape($key . '=' . (int)$value) . "' AND store_id = '" . (int)$this->config->get('config_store_id') . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		if ($url_info['host']) {
+			$url .= $url_info['host'];
+		}
 
-					if ($query->num_rows && $query->row['keyword']) {
-						$url .= '/' . $query->row['keyword'];
+		if (isset($url_info['port'])) {
+			$url .= ':' . $url_info['port'];
+		}
 
-						unset($data[$key]);
-					}
-				} elseif ($key == 'path') {
-					$categories = explode('_', $value);
+		parse_str($url_info['query'], $query);
 
-					foreach ($categories as $category) {
-						$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "seo_url WHERE `query` = 'category_id=" . (int)$category . "' AND store_id = '" . (int)$this->config->get('config_store_id') . "' AND language_id = '" . (int)$this->config->get('config_language_id') . "'");
+		// Start changing the URL query into a path
+		$paths = [];
 
-						if ($query->num_rows && $query->row['keyword']) {
-							$url .= '/' . $query->row['keyword'];
-						} else {
-							$url = '';
+		// Parse the query into its separate parts
+		$parts = explode('&', $url_info['query']);
 
-							break;
-						}
-					}
+		foreach ($parts as $part) {
+			[$key, $value] = explode('=', $part);
 
-					unset($data[$key]);
-				}
+			$result = $this->model_design_seo_url->getSeoUrlByKeyValue($key, $value);
+
+			if ($result) {
+				$paths[] = $result;
+
+				unset($query[$key]);
 			}
 		}
 
-		if ($url) {
-			unset($data['route']);
+		$sort_order = [];
 
-			$query = '';
-
-			if ($data) {
-				foreach ($data as $key => $value) {
-					$query .= '&' . rawurlencode((string)$key) . '=' . rawurlencode((is_array($value) ? http_build_query($value) : (string)$value));
-				}
-
-				if ($query) {
-					$query = '?' . str_replace('&', '&amp;', trim($query, '&'));
-				}
-			}
-
-			return $url_info['scheme'] . '://' . $url_info['host'] . (isset($url_info['port']) ? ':' . $url_info['port'] : '') . str_replace('/index.php', '', $url_info['path']) . $url . $query;
-		} else {
-			return $link;
+		foreach ($paths as $key => $value) {
+			$sort_order[$key] = $value['sort_order'];
 		}
+
+		array_multisort($sort_order, SORT_ASC, $paths);
+
+		// Build the path
+		$url .= str_replace('/index.php', '', $url_info['path']);
+
+		foreach ($paths as $result) {
+			$url .= '/' . $result['keyword'];
+		}
+
+		// Rebuild the URL query
+		if ($query) {
+			$url .= '?' . str_replace(['%2F', '%7C'], ['/', '|'], http_build_query($query));
+		}
+
+		return $url;
 	}
 }

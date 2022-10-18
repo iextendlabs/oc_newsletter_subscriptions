@@ -1,0 +1,232 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="float-end">
+        <a href="{{ back }}" data-bs-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-light"><i class="fas fa-reply"></i></a></div>
+      <h1>{{ heading_title }}</h1>
+      <ol class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-pencil-alt"></i> {{ heading_title }}</div>
+      <div class="card-body">
+        <fieldset>
+          <legend>{{text_install}}</legend>
+          <div class="row mb-3">
+            <label for="input-filename" class="col-sm-2 col-form-label">{{ entry_upload }}</label>
+            <div class="col-sm-10">
+              <div class="input-group">
+                <button type="button" id="button-upload" class="btn btn-primary"><i class="fa-solid fa-upload"></i> {{ button_upload }}</button>
+              </div>
+              <div class="form-text" style="font-size: small;">{{ help_xml }}</div>
+              <div id="error-filename" class="invalid-feedback"></div>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>{{text_list}}</legend>
+          <div class="row mb-3">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <td class="text-start">{{ column_name }}</td>
+                    <td class="text-center">{{ column_no_file }}</td>
+                    <td class="text-center">{{ column_operation }}</td>
+                    <td class="text-end" style="min-width: 105px;">{{ column_action }}</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if files %}
+                    {% for file in files %}
+                      <tr>
+                        <td class="text-start">
+                            {{ file.name }}
+                        </td>
+                        <td class="text-center">
+                          {{ file.files }}
+                        </td>
+                        <td class="text-center">
+                          {{ file.operation }}
+                        </td>
+                        <td class="text-end align-text-top text-nowrap">
+                          
+                          {% if file.status %}
+                            <button type="button" data-bs-toggle="tooltip" title="{{ button_enable }}" class="btn btn-success enable" value="{{ file.enable }}" ><i class="fa-solid fa-plus-circle"></i></button>
+                            <button type="button" data-bs-toggle="tooltip" title="{{ button_delete }}" class="btn btn-danger delete" value="{{ file.delete }}"><i class="fa-regular fa-trash-can" ></i></button>
+                            <a href="{{ file.view }}"><button type="button" data-bs-toggle="tooltip" title="{{ button_view }}" class="btn btn-primary" disabled><i class="fa-regular fa-eye" ></i></button></a>
+                          {% else %}
+                            <button type="button" data-bs-toggle="tooltip" title="{{ button_disable }}" class="btn btn-warning disable" value="{{ file.disable }}"><i class="fa-solid fa-minus-circle"></i></button>
+                            <button type="button" data-bs-toggle="tooltip" title="{{ button_delete }}" class="btn btn-danger delete" value="{{ file.delete }}" disabled><i class="fa-regular fa-trash-can" ></i></button>
+                            <a href="{{ file.view }}"><button type="button" data-bs-toggle="tooltip" title="{{ button_view }}" class="btn btn-primary"><i class="fa-regular fa-eye" ></i></button></a>
+                          {% endif %}
+                          
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td class="text-center" colspan="4">{{ text_no_results }}</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </fieldset>          
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  $('#button-upload').on('click', function () {
+    var element = this;
+
+    $('#form-upload').remove();
+
+    $('body').prepend('<form enctype="multipart/form-data" id="form-upload" style="display: none;"><input type="file" name="file"/></form>');
+
+    $('#form-upload input[name=\'file\']').trigger('click');
+
+    $('#form-upload input[name=\'file\']').on('change', function () {
+        if ((this.files[0].size / 1024) > {{ config_file_max_size }}) {
+            alert('{{ error_upload_size }}');
+
+            $(this).val('');
+        }
+    });
+
+    if (typeof timer !== 'undefined') {
+        clearInterval(timer);
+    }
+
+    var timer = setInterval(function () {
+        if ($('#form-upload input[name=\'file\']').val() !== '') {
+            clearInterval(timer);
+
+            $.ajax({
+                url: 'index.php?route=extension/vqmodxmlInstaller/module/vqmodxml_installer|upload&user_token={{ user_token }}',
+                type: 'post',
+                dataType: 'json',
+                data: new FormData($('#form-upload')[0]),
+                cache: false,
+                contentType: false,
+                processData: false,
+                beforeSend: function () {
+                    $(element).prop('disabled', true).addClass('loading');
+                },
+                complete: function () {
+                    $(element).prop('disabled', false).removeClass('loading');
+                },
+                success: function (json) {
+                    if (json['error']) {
+                        alert(json['error']);
+                    }
+
+                    if (json['success']) {
+                        alert(json['success']);
+                    }
+                    location.reload();
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+                }
+            });
+        }
+    }, 500);
+});
+
+$('.delete').on('click', function () {
+
+  var warning = '{{ text_delete_warning }}';
+  if (confirm(warning) == true) {
+    var element = this;
+    var delt = $(element).val();
+    $.ajax({
+      url: delt,
+      type: 'post',
+      dataType: 'json',
+      data: new FormData($('#form-upload')[0]),
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function (json) {
+        if (json['error']) {
+          alert(json['error']);
+        }
+        if (json['success']) {
+          alert(json['success']);
+        }
+        location.reload();
+      }
+    });
+  } else {
+    location.reload();
+  }
+});
+
+$('.disable').on('click', function () {
+  var warning = '{{ text_disable_warning }}';
+  if (confirm(warning) == true) {
+    var element = this;
+    var delt = $(element).val();
+    $.ajax({
+      url: delt,
+      type: 'post',
+      dataType: 'json',
+      data: new FormData($('#form-upload')[0]),
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function (json) {
+        if (json['error']) {
+          alert(json['error']);
+        }
+        if (json['success']) {
+          alert(json['success']);
+        }
+        location.reload();
+      }
+    });
+  } else {
+    location.reload();
+  }
+  
+});
+
+$('.enable').on('click', function () {
+  var warning = '{{ text_enable_warning }}';
+  if (confirm(warning) == true) {
+    var element = this;
+    var delt = $(element).val();
+    $.ajax({
+      url: delt,
+      type: 'post',
+      dataType: 'json',
+      data: new FormData($('#form-upload')[0]),
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function (json) {
+        if (json['error']) {
+          alert(json['error']);
+        }
+        if (json['success']) {
+          alert(json['success']);
+        }
+        location.reload();
+      }
+    });
+  } else {
+    location.reload();
+  }
+  
+});
+</script>
+{{ footer }}

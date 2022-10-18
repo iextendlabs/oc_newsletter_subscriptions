@@ -1,490 +1,512 @@
 function getURLVar(key) {
-	var value = [];
+    var value = [];
 
-	var query = String(document.location).split('?');
+    var query = String(document.location).split('?');
 
-	if (query[1]) {
-		var part = query[1].split('&');
+    if (query[1]) {
+        var part = query[1].split('&');
 
-		for (i = 0; i < part.length; i++) {
-			var data = part[i].split('=');
+        for (i = 0; i < part.length; i++) {
+            var data = part[i].split('=');
 
-			if (data[0] && data[1]) {
-				value[data[0]] = data[1];
-			}
-		}
+            if (data[0] && data[1]) {
+                value[data[0]] = data[1];
+            }
+        }
 
-		if (value[key]) {
-			return value[key];
-		} else {
-			return '';
-		}
-	}
+        if (value[key]) {
+            return value[key];
+        } else {
+            return '';
+        }
+    }
 }
 
-$(document).ready(function() {
-	// Highlight any found errors
-	$('.text-danger').each(function() {
-		var element = $(this).parent().parent();
+// Tooltip
+var oc_tooltip = function () {
+    // Apply to all on current page
+    tooltip = bootstrap.Tooltip.getOrCreateInstance(this);
+    tooltip.show();
+}
 
-		if (element.hasClass('form-group')) {
-			element.addClass('has-error');
-		}
-	});
+$(document).on('mouseenter', '[data-bs-toggle=\'tooltip\']', oc_tooltip);
 
-	// Currency
-	$('#form-currency .currency-select').on('click', function(e) {
-		e.preventDefault();
-
-		$('#form-currency input[name=\'code\']').val($(this).attr('name'));
-
-		$('#form-currency').submit();
-	});
-
-	// Language
-	$('#form-language .language-select').on('click', function(e) {
-		e.preventDefault();
-
-		$('#form-language input[name=\'code\']').val($(this).attr('name'));
-
-		$('#form-language').submit();
-	});
-
-	/* Search */
-	$('#search input[name=\'search\']').parent().find('button').on('click', function() {
-		var url = $('base').attr('href') + 'index.php?route=product/search';
-
-		var value = $('header #search input[name=\'search\']').val();
-
-		if (value) {
-			url += '&search=' + encodeURIComponent(value);
-		}
-
-		location = url;
-	});
-
-	$('#search input[name=\'search\']').on('keydown', function(e) {
-		if (e.keyCode == 13) {
-			$('header #search input[name=\'search\']').parent().find('button').trigger('click');
-		}
-	});
-
-	// Menu
-	$('#menu .dropdown-menu').each(function() {
-		var menu = $('#menu').offset();
-		var dropdown = $(this).parent().offset();
-
-		var i = (dropdown.left + $(this).outerWidth()) - (menu.left + $('#menu').outerWidth());
-
-		if (i > 0) {
-			$(this).css('margin-left', '-' + (i + 10) + 'px');
-		}
-	});
-
-	// Product List
-	$('#list-view').click(function() {
-		$('#content .product-grid > .clearfix').remove();
-
-		$('#content .row > .product-grid').attr('class', 'product-layout product-list col-xs-12');
-		$('#grid-view').removeClass('active');
-		$('#list-view').addClass('active');
-
-		localStorage.setItem('display', 'list');
-	});
-
-	// Product Grid
-	$('#grid-view').click(function() {
-		// What a shame bootstrap does not take into account dynamically loaded columns
-		var cols = $('#column-right, #column-left').length;
-
-		if (cols == 2) {
-			$('#content .product-list').attr('class', 'product-layout product-grid col-lg-6 col-md-6 col-sm-12 col-xs-12');
-		} else if (cols == 1) {
-			$('#content .product-list').attr('class', 'product-layout product-grid col-lg-4 col-md-4 col-sm-6 col-xs-12');
-		} else {
-			$('#content .product-list').attr('class', 'product-layout product-grid col-lg-3 col-md-3 col-sm-6 col-xs-12');
-		}
-
-		$('#list-view').removeClass('active');
-		$('#grid-view').addClass('active');
-
-		localStorage.setItem('display', 'grid');
-	});
-
-	if (localStorage.getItem('display') == 'list') {
-		$('#list-view').trigger('click');
-		$('#list-view').addClass('active');
-	} else {
-		$('#grid-view').trigger('click');
-		$('#grid-view').addClass('active');
-	}
-
-	// Checkout
-	$(document).on('keydown', '#collapse-checkout-option input[name=\'email\'], #collapse-checkout-option input[name=\'password\']', function(e) {
-		if (e.keyCode == 13) {
-			$('#collapse-checkout-option #button-login').trigger('click');
-		}
-	});
-
-	// tooltips on hover
-	$('[data-toggle=\'tooltip\']').tooltip({container: 'body'});
-
-	// Makes tooltips work on ajax generated content
-	$(document).ajaxStop(function() {
-		$('[data-toggle=\'tooltip\']').tooltip({container: 'body'});
-	});
+$(document).on('click', 'button', function () {
+    $('.tooltip').remove();
 });
 
-// Cart add remove functions
-var cart = {
-	'add': function(product_id, quantity) {
-		$.ajax({
-			url: 'index.php?route=checkout/cart/add',
-			type: 'post',
-			data: 'product_id=' + product_id + '&quantity=' + (typeof(quantity) != 'undefined' ? quantity : 1),
-			dataType: 'json',
-			beforeSend: function() {
-				$('#cart > button').button('loading');
-			},
-			complete: function() {
-				$('#cart > button').button('reset');
-			},
-			success: function(json) {
-				$('.alert-dismissible, .text-danger').remove();
-
-				if (json['redirect']) {
-					location = json['redirect'];
-				}
-
-				if (json['success']) {
-					$('#content').parent().before('<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> ' + json['success'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
-
-					// Need to set timeout otherwise it wont update the total
-					setTimeout(function () {
-						$('#cart > button').html('<span id="cart-total"><i class="fa fa-shopping-cart"></i> ' + json['total'] + '</span>');
-					}, 100);
-
-					$('html, body').animate({ scrollTop: 0 }, 'slow');
-
-					$('#cart > ul').load('index.php?route=common/cart/info ul li');
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-			}
-		});
-	},
-	'update': function(key, quantity) {
-		$.ajax({
-			url: 'index.php?route=checkout/cart/edit',
-			type: 'post',
-			data: 'key=' + key + '&quantity=' + (typeof(quantity) != 'undefined' ? quantity : 1),
-			dataType: 'json',
-			beforeSend: function() {
-				$('#cart > button').button('loading');
-			},
-			complete: function() {
-				$('#cart > button').button('reset');
-			},
-			success: function(json) {
-				// Need to set timeout otherwise it wont update the total
-				setTimeout(function () {
-					$('#cart > button').html('<span id="cart-total"><i class="fa fa-shopping-cart"></i> ' + json['total'] + '</span>');
-				}, 100);
-
-				if (getURLVar('route') == 'checkout/cart' || getURLVar('route') == 'checkout/checkout') {
-					location = 'index.php?route=checkout/cart';
-				} else {
-					$('#cart > ul').load('index.php?route=common/cart/info ul li');
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-			}
-		});
-	},
-	'remove': function(key) {
-		$.ajax({
-			url: 'index.php?route=checkout/cart/remove',
-			type: 'post',
-			data: 'key=' + key,
-			dataType: 'json',
-			beforeSend: function() {
-				$('#cart > button').button('loading');
-			},
-			complete: function() {
-				$('#cart > button').button('reset');
-			},
-			success: function(json) {
-				// Need to set timeout otherwise it wont update the total
-				setTimeout(function () {
-					$('#cart > button').html('<span id="cart-total"><i class="fa fa-shopping-cart"></i> ' + json['total'] + '</span>');
-				}, 100);
-
-				if (getURLVar('route') == 'checkout/cart' || getURLVar('route') == 'checkout/checkout') {
-					location = 'index.php?route=checkout/cart';
-				} else {
-					$('#cart > ul').load('index.php?route=common/cart/info ul li');
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-			}
-		});
-	}
+// Date
+var oc_datetimepicker = function () {
+    $(this).daterangepicker({
+        singleDatePicker: true,
+        autoApply: true,
+        autoUpdateInput: false,
+        locale: {
+            format: 'YYYY-MM-DD'
+        }
+    }, function (start, end) {
+        $(this.element).val(start.format('YYYY-MM-DD'));
+    });
 }
 
-var voucher = {
-	'add': function() {
+$(document).on('focus', '.date', oc_datetimepicker);
 
-	},
-	'remove': function(key) {
-		$.ajax({
-			url: 'index.php?route=checkout/cart/remove',
-			type: 'post',
-			data: 'key=' + key,
-			dataType: 'json',
-			beforeSend: function() {
-				$('#cart > button').button('loading');
-			},
-			complete: function() {
-				$('#cart > button').button('reset');
-			},
-			success: function(json) {
-				// Need to set timeout otherwise it wont update the total
-				setTimeout(function () {
-					$('#cart > button').html('<span id="cart-total"><i class="fa fa-shopping-cart"></i> ' + json['total'] + '</span>');
-				}, 100);
-
-				if (getURLVar('route') == 'checkout/cart' || getURLVar('route') == 'checkout/checkout') {
-					location = 'index.php?route=checkout/cart';
-				} else {
-					$('#cart > ul').load('index.php?route=common/cart/info ul li');
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-			}
-		});
-	}
+// Time
+var oc_datetimepicker = function () {
+    $(this).daterangepicker({
+        singleDatePicker: true,
+        datePicker: false,
+        autoApply: true,
+        autoUpdateInput: false,
+        timePicker: true,
+        timePicker24Hour: true,
+        locale: {
+            format: 'HH:mm'
+        }
+    }, function (start, end) {
+        $(this.element).val(start.format('HH:mm'));
+    }).on('show.daterangepicker', function (ev, picker) {
+        picker.container.find('.calendar-table').hide();
+    });
 }
 
-var wishlist = {
-	'add': function(product_id) {
-		$.ajax({
-			url: 'index.php?route=account/wishlist/add',
-			type: 'post',
-			data: 'product_id=' + product_id,
-			dataType: 'json',
-			success: function(json) {
-				$('.alert-dismissible').remove();
+$(document).on('focus', '.time', oc_datetimepicker);
 
-				if (json['redirect']) {
-					location = json['redirect'];
-				}
-
-				if (json['success']) {
-					$('#content').parent().before('<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> ' + json['success'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
-				}
-
-				$('#wishlist-total span').html(json['total']);
-				$('#wishlist-total').attr('title', json['total']);
-
-				$('html, body').animate({ scrollTop: 0 }, 'slow');
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-			}
-		});
-	},
-	'remove': function() {
-
-	}
+// Date Time
+var oc_datetimepicker = function () {
+    $('.datetime').daterangepicker({
+        singleDatePicker: true,
+        autoApply: true,
+        autoUpdateInput: false,
+        timePicker: true,
+        timePicker24Hour: true,
+        locale: {
+            format: 'YYYY-MM-DD HH:mm'
+        }
+    }, function (start, end) {
+        $(this.element).val(start.format('YYYY-MM-DD HH:mm'));
+    });
 }
 
-var compare = {
-	'add': function(product_id) {
-		$.ajax({
-			url: 'index.php?route=product/compare/add',
-			type: 'post',
-			data: 'product_id=' + product_id,
-			dataType: 'json',
-			success: function(json) {
-				$('.alert-dismissible').remove();
+$(document).on('focus', '.datetime', oc_datetimepicker);
 
-				if (json['success']) {
-					$('#content').parent().before('<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> ' + json['success'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
-
-					$('#compare-total').html(json['total']);
-
-					$('html, body').animate({ scrollTop: 0 }, 'slow');
-				}
-			},
-			error: function(xhr, ajaxOptions, thrownError) {
-				alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-			}
-		});
-	},
-	'remove': function() {
-
-	}
+// Alert Fade
+var oc_alert = function () {
+    window.setTimeout(function () {
+        $('.alert-dismissible').fadeTo(1000, 0, function () {
+            $(this).remove();
+        });
+    }, 7000);
 }
 
-/* Agree to Terms */
-$(document).delegate('.agree', 'click', function(e) {
-	e.preventDefault();
+$(document).on('click', 'button', oc_alert);
 
-	$('#modal-agree').remove();
+$(document).ready(function () {
+    // Currency
+    $('#form-currency .dropdown-item').on('click', function (e) {
+        e.preventDefault();
 
-	var element = this;
+        $('#form-currency input[name=\'code\']').val($(this).attr('href'));
 
-	$.ajax({
-		url: $(element).attr('href'),
-		type: 'get',
-		dataType: 'html',
-		success: function(data) {
-			html  = '<div id="modal-agree" class="modal">';
-			html += '  <div class="modal-dialog">';
-			html += '    <div class="modal-content">';
-			html += '      <div class="modal-header">';
-			html += '        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>';
-			html += '        <h4 class="modal-title">' + $(element).text() + '</h4>';
-			html += '      </div>';
-			html += '      <div class="modal-body">' + data + '</div>';
-			html += '    </div>';
-			html += '  </div>';
-			html += '</div>';
+        $('#form-currency').submit();
+    });
 
-			$('body').append(html);
+    // Search
+    $('#search input[name=\'search\']').parent().find('button').on('click', function () {
+        var url = $('base').attr('href') + 'index.php?route=product/search&language=' + $(this).attr('data-lang');
 
-			$('#modal-agree').modal('show');
-		}
-	});
+        var value = $('header #search input[name=\'search\']').val();
+
+        if (value) {
+            url += '&search=' + encodeURIComponent(value);
+        }
+
+        location = url;
+    });
+
+    $('#search input[name=\'search\']').on('keydown', function (e) {
+        if (e.keyCode == 13) {
+            $('header #search input[name=\'search\']').parent().find('button').trigger('click');
+        }
+    });
+
+    // Menu
+    $('#menu .dropdown-menu').each(function () {
+        var menu = $('#menu').offset();
+        var dropdown = $(this).parent().offset();
+
+        var i = (dropdown.left + $(this).outerWidth()) - (menu.left + $('#menu').outerWidth());
+
+        if (i > 0) {
+            $(this).css('margin-left', '-' + (i + 10) + 'px');
+        }
+    });
+
+    // Product List
+    $('#button-list').on('click', function () {
+        var element = this;
+
+        $('#product-list').attr('class', 'row row-cols-1 product-list');
+
+        $('#button-grid').removeClass('active');
+        $('#button-list').addClass('active');
+
+        localStorage.setItem('display', 'list');
+    });
+
+    // Product Grid
+    $('#button-grid').on('click', function () {
+        var element = this;
+
+        // What a shame bootstrap does not take into account dynamically loaded columns
+        $('#product-list').attr('class', 'row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3');
+
+        $('#button-list').removeClass('active');
+        $('#button-grid').addClass('active');
+
+        localStorage.setItem('display', 'grid');
+    });
+
+    // Local Storage
+    if (localStorage.getItem('display') == 'list') {
+        $('#product-list').attr('class', 'row row-cols-1 product-list');
+        $('#button-list').addClass('active');
+    } else {
+        $('#product-list').attr('class', 'row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3');
+        $('#button-grid').addClass('active');
+    }
+
+    /* Agree to Terms */
+    $('body').on('click', '.modal-link', function (e) {
+        e.preventDefault();
+
+        var element = this;
+
+        $('#modal-information').remove();
+
+        $.ajax({
+            url: $(element).attr('href'),
+            dataType: 'html',
+            success: function (html) {
+                $('body').append(html);
+
+                $('#modal-information').modal('show');
+            }
+        });
+    });
+
+    // Cookie Policy
+    $('#cookie button').on('click', function () {
+        var element = this;
+
+        $.ajax({
+            url: $(this).val(),
+            type: 'get',
+            dataType: 'json',
+            beforeSend: function () {
+                $(element).button('loading');
+            },
+            complete: function () {
+                $(element).prop('disabled', false).removeClass('loading');
+            },
+            success: function (json) {
+                if (json['success']) {
+                    $('#cookie').fadeOut(400, function () {
+                        $('#cookie').remove();
+                    });
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+            }
+        });
+    });
 });
 
-// Autocomplete */
-(function($) {
-	$.fn.autocomplete = function(option) {
-		return this.each(function() {
-			this.timer = null;
-			this.items = new Array();
+// Forms
+$(document).on('submit', 'form[data-oc-toggle=\'ajax\']', function (e) {
+    e.preventDefault();
 
-			$.extend(this, option);
+    var element = this;
 
-			$(this).attr('autocomplete', 'off');
+    var form = e.target;
 
-			// Focus
-			$(this).on('focus', function() {
-				this.request();
-			});
+    var action = $(form).attr('action');
 
-			// Blur
-			$(this).on('blur', function() {
-				setTimeout(function(object) {
-					object.hide();
-				}, 200, this);
-			});
+    if (e.originalEvent !== undefined && e.originalEvent.submitter !== undefined) {
+        var button = e.originalEvent.submitter;
+    } else {
+        var button = '';
+    }
 
-			// Keydown
-			$(this).on('keydown', function(event) {
-				switch(event.keyCode) {
-					case 27: // escape
-						this.hide();
-						break;
-					default:
-						this.request();
-						break;
-				}
-			});
+    var formaction = $(button).attr('formaction');
 
-			// Click
-			this.click = function(event) {
-				event.preventDefault();
+    if (formaction !== undefined) {
+        action = formaction;
+    }
 
-				value = $(event.target).parent().attr('data-value');
+    var method = $(form).attr('method');
 
-				if (value && this.items[value]) {
-					this.select(this.items[value]);
-				}
-			}
+    if (method === undefined) {
+        method = 'post';
+    }
 
-			// Show
-			this.show = function() {
-				var pos = $(this).position();
+    var enctype = $(element).attr('enctype');
 
-				$(this).siblings('ul.dropdown-menu').css({
-					top: pos.top + $(this).outerHeight(),
-					left: pos.left
-				});
+    if (enctype === undefined) {
+        enctype = 'application/x-www-form-urlencoded';
+    }
 
-				$(this).siblings('ul.dropdown-menu').show();
-			}
+    // https://github.com/opencart/opencart/issues/9690
+    if (typeof CKEDITOR != 'undefined') {
+        for (instance in CKEDITOR.instances) {
+            CKEDITOR.instances[instance].updateElement();
+        }
+    }
 
-			// Hide
-			this.hide = function() {
-				$(this).siblings('ul.dropdown-menu').hide();
-			}
+    console.log(e);
+    console.log('element ' + element);
+    console.log('action ' + action);
+    console.log('button ' + button);
+    console.log('formaction ' + formaction);
+    console.log('method ' + method);
+    console.log('enctype ' + enctype);
 
-			// Request
-			this.request = function() {
-				clearTimeout(this.timer);
+    $.ajax({
+        url: action,
+        type: method,
+        data: $(form).serialize(),
+        dataType: 'json',
+        cache: false,
+        contentType: enctype,
+        processData: false,
+        beforeSend: function () {
+            $(button).prop('disabled', true).addClass('loading');
+        },
+        complete: function () {
+            $(button).prop('disabled', false).removeClass('loading');
+        },
+        success: function (json) {
+            $('.alert-dismissible').remove();
+            $(form).find('.is-invalid').removeClass('is-invalid');
+            $(form).find('.invalid-feedback').removeClass('d-block');
 
-				this.timer = setTimeout(function(object) {
-					object.source($(object).val(), $.proxy(object.response, object));
-				}, 200, this);
-			}
+            console.log(json);
 
-			// Response
-			this.response = function(json) {
-				html = '';
+            if (json['redirect']) {
+                location = json['redirect'].replaceAll('&amp;', '&');
+            }
 
-				if (json.length) {
-					for (i = 0; i < json.length; i++) {
-						this.items[json[i]['value']] = json[i];
-					}
+            if (typeof json['error'] == 'string') {
+                $('#alert').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> ' + json['error'] + ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+            }
 
-					for (i = 0; i < json.length; i++) {
-						if (!json[i]['category']) {
-							html += '<li data-value="' + json[i]['value'] + '"><a href="#">' + json[i]['label'] + '</a></li>';
-						}
-					}
+            if (typeof json['error'] == 'object') {
+                if (json['error']['warning']) {
+                    $('#alert').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> ' + json['error']['warning'] + ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+                }
 
-					// Get all the ones with a categories
-					var category = new Array();
+                for (key in json['error']) {
+                    $('#input-' + key.replaceAll('_', '-')).addClass('is-invalid').find('.form-control, .form-select, .form-check-input, .form-check-label').addClass('is-invalid');
+                    $('#error-' + key.replaceAll('_', '-')).html(json['error'][key]).addClass('d-block');
+                }
+            }
 
-					for (i = 0; i < json.length; i++) {
-						if (json[i]['category']) {
-							if (!category[json[i]['category']]) {
-								category[json[i]['category']] = new Array();
-								category[json[i]['category']]['name'] = json[i]['category'];
-								category[json[i]['category']]['item'] = new Array();
-							}
+            if (json['success']) {
+                $('#alert').prepend('<div class="alert alert-success alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> ' + json['success'] + ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
 
-							category[json[i]['category']]['item'].push(json[i]);
-						}
-					}
+                // Refresh
+                var url = $(form).attr('data-oc-load');
+                var target = $(form).attr('data-oc-target');
 
-					for (i in category) {
-						html += '<li class="dropdown-header">' + category[i]['name'] + '</li>';
+                if (url !== undefined && target !== undefined) {
+                    $(target).load(url);
+                }
+            }
 
-						for (j = 0; j < category[i]['item'].length; j++) {
-							html += '<li data-value="' + category[i]['item'][j]['value'] + '"><a href="#">&nbsp;&nbsp;&nbsp;' + category[i]['item'][j]['label'] + '</a></li>';
-						}
-					}
-				}
+            // Replace any form values that correspond to form names.
+            for (key in json) {
+                $(form).find('[name=\'' + key + '\']').val(json[key]);
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+        }
+    });
+});
 
-				if (html) {
-					this.show();
-				} else {
-					this.hide();
-				}
+// Upload
+$(document).on('click', 'button[data-oc-toggle=\'upload\']', function () {
+    var element = this;
 
-				$(this).siblings('ul.dropdown-menu').html(html);
-			}
+    if (!$(element).prop('disabled')) {
+        $('#form-upload').remove();
 
-			$(this).after('<ul class="dropdown-menu"></ul>');
-			$(this).siblings('ul.dropdown-menu').delegate('a', 'click', $.proxy(this.click, this));
+        $('body').prepend('<form enctype="multipart/form-data" id="form-upload" style="display: none;"><input type="file" name="file" value=""/></form>');
 
-		});
-	}
+        $('#form-upload input[name=\'file\']').trigger('click');
+
+        $('#form-upload input[name=\'file\']').on('change', function (e) {
+            if ((this.files[0].size / 1024) > $(element).attr('data-oc-size-max')) {
+                alert($(element).attr('data-oc-size-error'));
+
+                $(this).val('');
+            }
+        });
+
+        if (typeof timer !== 'undefined') {
+            clearInterval(timer);
+        }
+
+        var timer = setInterval(function () {
+            if ($('#form-upload input[name=\'file\']').val() != '') {
+                clearInterval(timer);
+
+                $.ajax({
+                    url: $(element).attr('data-oc-url'),
+                    type: 'post',
+                    data: new FormData($('#form-upload')[0]),
+                    dataType: 'json',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    beforeSend: function () {
+                        $(element).prop('disabled', true).addClass('loading');
+                    },
+                    complete: function () {
+                        $(element).prop('disabled', false).removeClass('loading');
+                    },
+                    success: function (json) {
+                        console.log(json);
+
+                        if (json['error']) {
+                            alert(json['error']);
+                        }
+
+                        if (json['success']) {
+                            alert(json['success']);
+                        }
+
+                        if (json['code']) {
+                            $($(element).attr('data-oc-target')).attr('value', json['code']);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+                    }
+                });
+            }
+        }, 500);
+    }
+});
+
+// Chain ajax calls.
+class Chain {
+    constructor() {
+        this.start = false;
+        this.data = [];
+    }
+
+    attach(call) {
+        this.data.push(call);
+
+        if (!this.start) {
+            this.execute();
+        }
+    }
+
+    execute() {
+        if (this.data.length) {
+            this.start = true;
+
+            var call = this.data.shift();
+
+            var jqxhr = call();
+
+            jqxhr.done(function () {
+                chain.execute();
+            });
+        } else {
+            this.start = false;
+        }
+    }
+}
+
+var chain = new Chain();
+
+// Autocomplete
+(function ($) {
+    $.fn.autocomplete = function (option) {
+        return this.each(function () {
+            var $this = $(this);
+            var $dropdown = $('#' + $this.attr('list'));
+
+            this.timer = null;
+            this.items = [];
+
+            $.extend(this, option);
+
+            // Focus
+            $this.on('focus', function () {
+                this.request();
+            });
+
+            // Keydown
+            $this.on('input', function (e) {
+                this.request();
+
+                var value = $this.val();
+
+                if (value && this.items[value]) {
+                    this.select(this.items[value]);
+                }
+            });
+
+            // Request
+            this.request = function () {
+                clearTimeout(this.timer);
+
+                this.timer = setTimeout(function (object) {
+                    object.source($(object).val(), $.proxy(object.response, object));
+                }, 50, this);
+            }
+
+            // Response
+            this.response = function (json) {
+                var html = '';
+                var category = {};
+                var name;
+                var i = 0, j = 0;
+
+                if (json.length) {
+                    for (i = 0; i < json.length; i++) {
+                        // update element items
+                        this.items[json[i]['label']] = json[i];
+
+                        if (!json[i]['category']) {
+                            // ungrouped items
+                            html += '<option>' + json[i]['label'] + '</option>';
+                        } else {
+                            // grouped items
+                            name = json[i]['category'];
+
+                            if (!category[name]) {
+                                category[name] = [];
+                            }
+
+                            category[name].push(json[i]);
+                        }
+                    }
+
+                    for (name in category) {
+                        for (j = 0; j < category[name].length; j++) {
+                            html += '<option value="' + category[name][j]['label'] + '">' + name + '</option>';
+                        }
+                    }
+                }
+
+                $dropdown.html(html);
+            }
+        });
+    }
 })(window.jQuery);

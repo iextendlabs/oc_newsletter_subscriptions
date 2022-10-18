@@ -1,26 +1,79 @@
 <?php
-namespace Template;
-final class Template {
-	private $data = array();
-		
-	public function set($key, $value) {
-		$this->data[$key] = $value;
+namespace Opencart\System\Library\Template;
+class Template {
+	protected string $directory = '';
+	protected array $path = [];
+
+	/**
+	 * addPath
+	 *
+	 * @param    string $namespace
+	 * @param    string $directory
+	 */
+	public function addPath(string $namespace, string $directory = ''): void {
+		if (!$directory) {
+			$this->directory = $namespace;
+		} else {
+			$this->path[$namespace] = $directory;
+		}
 	}
-	
-	public function render($template) {
-		$file = DIR_TEMPLATE . $template . '.tpl';
 
-		if (is_file($file)) {
-			extract($this->data);
+	/**
+	 * Render
+	 *
+	 * @param	string	$filename
+	 * @param	array	$data
+	 * @param	string	$code
+	 *
+	 * @return	array
+	 */
+	public function render(string $filename, array $data = [], string $code = ''): string {
+		if (!$code) {
+			$file = $this->directory . $filename . '.tpl';
 
-			ob_start();
+			$namespace = '';
 
-			require($file);
+			$parts = explode('/', $filename);
 
-			return ob_get_clean();
+			foreach ($parts as $part) {
+				if (!$namespace) {
+					$namespace .= $part;
+				} else {
+					$namespace .= '/' . $part;
+				}
+
+				if (isset($this->path[$namespace])) {
+					$file = $this->path[$namespace] . substr($filename, strlen($namespace)) . '.tpl';
+				}
+			}
+
+			if (isset($file) && is_file($file)) {
+				$code = file_get_contents($file);
+			} else {
+				throw new \Exception('Error: Could not load template ' . $filename . '!');
+			}
 		}
 
-		throw new \Exception('Error: Could not load template ' . $file . '!');
-		exit();
-	}	
+		if ($code) {
+			ob_start();
+
+			extract($data);
+
+			include($this->compile($filename, $code));
+
+			return ob_get_clean();
+		} else {
+			return '';
+		}
+	}
+
+	protected function compile(string $filename, string $code): string {
+		$file = DIR_CACHE . 'template/' . hash('md5', $filename . $code) . '.php';
+
+		if (!is_file($file)) {
+			file_put_contents($file, $code, LOCK_EX);
+		}
+
+		return $file;
+	}
 }

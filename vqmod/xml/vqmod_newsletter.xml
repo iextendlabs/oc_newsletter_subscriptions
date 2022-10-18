@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+	<modification
+        xmlns="https://github.com/vqmod/vqmod"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://github.com/vqmod/vqmod https://raw.githubusercontent.com/vqmod/vqmod/master/vqmod.xsd"
+        >
+		<id>Newsletter</id>
+		<version>1.0.0</version>
+		<vqmver>2.5.0</vqmver>
+		<author>Saqib Ashraf  || support@iextendlabs.com</author>
+	
+		<file name="catalog/controller/common/header.php">
+			<operation>
+				<search position="before"><![CDATA[
+				public function index(): string {
+				]]></search>
+			
+				<add><![CDATA[
+				public function newsletter():void {
+
+					if (($this->request->server['REQUEST_METHOD'] == 'POST')) {
+						
+						$this->db->query("INSERT INTO " . DB_PREFIX . "newsletter SET email = '" . $this->request->post['email'] . "', date_added = NOW()");
+					
+					}
+				}
+				]]></add>
+			</operation>
+			<operation>
+				<search position="before"><![CDATA[
+				return $this->load->view('common/header', $data);
+				]]></search>
+			
+				<add><![CDATA[
+				// newsletter
+
+				$this->load->model('tool/image');
+
+				$data['newsletter_status'] = $this->config->get('module_newsletter_status');
+				$data['newsletter_text'] = $this->config->get('module_newsletter_text');
+				$data['newsletter_text_color'] = $this->config->get('module_newsletter_text_color');
+				$data['newsletter_button_color'] = $this->config->get('module_newsletter_button_color');
+				
+				if(!empty($this->config->get('module_newsletter_image'))){
+					$data['newsletter_image'] = $this->model_tool_image->resize($this->config->get('module_newsletter_image'), 514, 250);
+				}else{
+					$data['newsletter_image'] = $this->model_tool_image->resize('no_image.png', 500, 500);
+				}
+				]]></add>
+			</operation>
+		</file>	
+		<file name="catalog/view/template/common/header.twig">
+			<operation>
+				<search position="before"><![CDATA[
+				</head>
+				]]></search>
+			
+				<add><![CDATA[
+				<style>
+					#popUpMain{
+					position: fixed;
+					width: 100%;
+					height: 100%;
+					background: rgb(0, 0, 0, 0.6);
+					z-index: 1001;
+					font-family: 'verdana 27px', sans-serif;
+					}
+					#popUp{
+					width: 500px;
+					height: 250px;
+					background-image: linear-gradient(rgba(70, 63, 63, 0.5),rgba(70, 63, 63, 0.5)), url({{newsletter_image}});
+					background-size: cover;
+					position: absolute;
+					top: 50%;
+					left: 50%;
+					transform: translate(-50%, -50%);
+					box-shadow: 2px,2px,5px,3px,white;
+					text-align: center;
+					}
+
+					#popUp h1{
+					transform: translateY(30px);
+					color: {{ newsletter_text_color }};
+					font-family: 'verdana 27px', sans-serif;
+					}
+
+					#popUp input{
+					width: 60%;
+					padding: 5px;
+					margin-top: 50px;
+					margin-bottom: 10px;
+					font-family: 'verdana 27px', sans-serif;
+					}
+
+					#popUp button{
+					background-color:  {{ newsletter_button_color }};
+					border: none;
+					font-size: 0.8rem;
+					padding: 0.6rem 1rem;
+					color:white;
+					font-family: 'verdana 27px', sans-serif;
+					}
+
+					@media only screen and (max-width:400px) {
+					#popUp{
+					width: 300px;
+					}
+					}
+				</style>
+				]]></add>
+			</operation>
+			<operation>
+				<search position="after"><![CDATA[
+				<body>
+				]]></search>
+			
+				<add><![CDATA[
+				<div id="popUpMain" style="display: none;">
+					<div id="popUp">
+						<form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-newsletter">
+						<h1>{{ newsletter_text }}</h1>
+						<input type="email" name="email" id="emial" placeholder="user@gmial.com" required><br>
+						<button type="submit" id="submit" class="submitId">Subscribe</button>
+						</form>
+						<br><button id="cancel" class="submitId">No Thanks</button>
+					</div>
+				</div>
+				]]></add>
+			</operation>
+			<operation>
+				<search position="after"><![CDATA[
+				</header>
+				]]></search>
+			
+				<add><![CDATA[
+				{% if newsletter_status %}
+				<script type="text/javascript">
+
+				// PopUp Newsletter
+				$(document).ready(function(){
+
+					//check cookie
+					var name = "Email"
+					const value = `; ${document.cookie}`;
+					const parts = value.split(`; ${name}=`);
+					if (parts.length !== 2){
+					setTimeout(function(){
+						$('#popUpMain').css('display','block');
+					}, 2000);
+					$('#cancel').click(function(){
+						$('#popUpMain').css('display','none');
+					});
+					}
+				});
+
+				// Form Submit
+				$('#form-newsletter').on('submit',function(e){
+					$.ajax({
+							url: 'index.php?route=common/header|newsletter',
+							type: 'post',
+						data: $('#form-newsletter').serialize(),
+						success: function(){
+						$('#popUpMain').css('display','none');
+						}
+						});
+					e.preventDefault();
+					
+					// Save data in cookies
+					var email = $('#emial').val();
+					const d = new Date();
+					d.setTime(d.getTime() + (30*24*60*60*1000));
+					let expires = "expires="+ d.toUTCString();
+					document.cookie =  "Email=" + email + ";" + expires + ";path=/";
+				});
+				</script>
+				{% endif %}
+				]]></add>
+			</operation>
+		</file>	
+	</modification>

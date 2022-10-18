@@ -1,0 +1,85 @@
+---------- Date: 2022-07-18 15:22:43 ~ IP : ::1 ----------
+REQUEST URI : /opencart4/newsletter/
+MOD DETAILS:
+   modFile   : D:\xampp\htdocs\opencart4\newsletter\vqmod/xml/vqmod_newsletter.xml
+   id        : NL-IE
+   version   : 4.x
+   vqmver    : 2.6.x
+   author    : Saqib Ashraf  || support@iextendlabs.com
+
+File Name    : catalog/controller/common/header.php(0)
+VQModObject::applyMod - SEARCH NOT FOUND (ABORTING MOD): public function index() {
+
+----------------------------------------------------------------------
+
+
+---------- Date: 2022-07-18 15:24:19 ~ IP : ::1 ----------
+REQUEST URI : /opencart4/newsletter/
+MOD DETAILS:
+   modFile   : D:\xampp\htdocs\opencart4\newsletter\vqmod/xml/vqmod_newsletter.xml
+   id        : NL-IE
+   version   : 4.x
+   vqmver    : 2.6.x
+   author    : Saqib Ashraf  || support@iextendlabs.com
+
+File Name    : catalog/controller/common/header.php(0)
+VQModObject::applyMod - SEARCH NOT FOUND (ABORTING MOD): public function index() {
+
+----------------------------------------------------------------------
+
+
+---------- Date: 2022-07-18 15:37:54 ~ IP : ::1 ----------
+REQUEST URI : /opencart4/newsletter/
+MOD DETAILS:
+   modFile   : D:\xampp\htdocs\opencart4\newsletter\vqmod/xml/vqmod-sample.xml
+   id        : Newsletter
+   version   : 1.0.0
+   vqmver    : 2.5.0
+   author    : Saqib Ashraf  || support@iextendlabs.com
+
+File Name    : catalog/controller/common/header.php(0)
+VQModObject::applyMod - SEARCH NOT FOUND (ABORTING MOD): public function index() {
+
+MOD DETAILS:
+   modFile   : D:\xampp\htdocs\opencart4\newsletter\vqmod/xml/vqmod_newsletter.xml
+   id        : NL-IE
+   version   : 4.x
+   vqmver    : 2.6.x
+   author    : Saqib Ashraf  || support@iextendlabs.com
+
+File Name    : catalog/controller/common/header.php(0)
+VQModObject::applyMod - SEARCH NOT FOUND (ABORTING MOD): public function index() {
+
+----------------------------------------------------------------------
+
+
+---------- Date: 2022-07-18 15:38:50 ~ IP : ::1 ----------
+REQUEST URI : /opencart4/newsletter/
+MOD DETAILS:
+   modFile   : D:\xampp\htdocs\opencart4\newsletter\vqmod/xml/vqmod_newsletter.xml
+   id        : Newsletter
+   version   : 1.0.0
+   vqmver    : 2.5.0
+   author    : Saqib Ashraf  || support@iextendlabs.com
+
+File Name    : catalog/controller/common/header.php(0)
+VQModObject::applyMod - SEARCH NOT FOUND (ABORTING MOD): public function index() {
+
+----------------------------------------------------------------------
+
+
+---------- Date: 2022-07-18 15:54:07 ~ IP : ::1 ----------
+REQUEST URI : /opencart4/newsletter/index.php?route=common/home&language=en-gb
+MOD DETAILS:
+   modFile   : D:\xampp\htdocs\opencart4\newsletter\vqmod/xml/vqmod_newsletter.xml
+   id        : Newsletter
+   version   : 1.0.0
+   vqmver    : 2.5.0
+   author    : Saqib Ashraf  || support@iextendlabs.com
+
+File Name    : catalog/controller/common/header.php(0)
+VQModObject::applyMod - SEARCH NOT FOUND (ABORTING MOD): public function index() {
+
+----------------------------------------------------------------------
+
+

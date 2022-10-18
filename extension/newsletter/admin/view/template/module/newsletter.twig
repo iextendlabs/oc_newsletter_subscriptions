@@ -1,0 +1,91 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="float-end">
+        <button type="submit" form="form-module" data-bs-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fas fa-save"></i></button>
+        <a href="{{ back }}" data-bs-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-light"><i class="fas fa-reply"></i></a></div>
+      <h1>{{ heading_title }}</h1>
+      <ol class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header"><i class="fas fa-pencil-alt"></i> {{ text_edit }}</div>
+      <div class="card-body">
+        <form id="form-module" action="{{ save }}" method="post" data-oc-toggle="ajax">
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-status">{{ entry_status }}</label>
+            <div class="col-sm-10">
+              <div class="form-check form-switch form-switch-lg">
+								<input type="checkbox" name="module_newsletter_status" value="1" id="input-status" class="form-check-input"{% if module_newsletter_status %} checked{% endif %}/>
+							</div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-newsletter-text">{{ entry_newsletter_text }}</label>
+            <div class="col-sm-10">
+              <input type="text" name="module_newsletter_text" value="{{ module_newsletter_text }}" placeholder="{{ entry_newsletter_text }}" id="input-newsletter-text" class="form-control"/>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-newsletter-text-color">{{ entry_newsletter_text_color }}</label>
+            <div class="col-sm-1">
+              <input type="color" name="module_newsletter_text_color" value="{{ module_newsletter_text_color }}" placeholder="{{ entry_newsletter_text_color }}" id="input-newsletter-text-color" class="form-control"/>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label" for="input-newsletter-button-color">{{ entry_newsletter_button_color }}</label>
+            <div class="col-sm-1">
+              <input type="color" name="module_newsletter_button_color" value="{{ module_newsletter_button_color }}" placeholder="{{ entry_newsletter_button_color }}" id="input-newsletter-button-color" class="form-control"/>
+            </div>
+          </div>
+          <fieldset>
+            <legend>{{ entry_newsletter_image }}</legend>
+              <div class="col-sm-4 col-md-3 mb-3">
+                <div id="image" class="card image">
+                  <img src="{{ newsletter_image }}" alt="" title="" id="thumb-image" data-oc-placeholder="{{ placeholder }}" class="card-img-top"/> <input type="hidden" name="module_newsletter_image" value="{{ module_newsletter_image }}" id="input-image"/>
+                  <div class="card-body">
+                    <button type="button" data-oc-toggle="image" data-oc-target="#input-image" data-oc-thumb="#thumb-image" class="btn btn-primary btn-sm btn-block"><i class="fa-solid fa-pencil"></i> {{ button_edit }}</button>
+                    <button type="button" data-oc-toggle="clear" data-oc-target="#input-image" data-oc-thumb="#thumb-image" class="btn btn-warning btn-sm btn-block"><i class="fa-regular fa-trash-can"></i> {{ button_clear }}</button>
+                  </div>
+                </div>
+              </div>
+          </fieldset>
+          <fieldset>
+            <legend>{{ text_list }}</legend>
+            <div class="table-responsive">
+              <table id="email-list" class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <td class="text-start">{{ column_email }}</td>
+                    <td class="text-end">{{ column_date_added }}</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if newsletters %}
+                  {% for newsletter in newsletters %}
+                    <tr>
+                      <td class="text-start">{{ newsletter.email }}</td>
+                      <td class="text-end">{{ newsletter.date_added }}</td>
+                    </tr>
+                  {% endfor %}
+                  {% else %}
+                <tr>
+                  <td class="text-center" colspan="2">{{ text_no_results }}</td>
+                </tr>
+                {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{ footer }}
